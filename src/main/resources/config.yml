@@ -1,0 +1,82 @@
+# MightyRTP Configuration
+
+# Worlds where the /rtp command is disabled
+blacklisted-worlds:
+  - "world_nether"
+  - "world_the_end"
+
+# Random teleporter distance (border limit)
+# This keeps players within ±distance blocks from world center (0,0)
+# Set to -1 to disable border limit
+teleport-distance: 5000
+
+# Minimum distance from world center (0,0) (prevents teleporting too close to center)
+min-distance-from-spawn: 200
+
+# Cooldown settings. Users with mightyrtp.bypass ignore this feature.
+cooldown:
+  # Enable/disable the cooldown system
+  enabled: true
+  # Number of times a user can execute the command within the cooldown window
+  max-uses: 10
+  # Cooldown time window in minutes
+  time-window: 10
+
+# Title settings
+titles:
+  # Enable/disable title messages when teleporting
+  enabled: true
+
+# Debug settings
+debug:
+  # Enable/disable debug logging for troubleshooting
+  enabled: false
+  # Log every Nth attempt when searching for safe locations (lower = more verbose)
+  log-attempt-interval: 10
+
+# Performance settings
+performance:
+  # Use async teleport location searching (recommended: true)
+  # This prevents the plugin from blocking the main server thread
+  async-teleport-search: true
+  # Maximum search time per attempt in milliseconds (prevents hanging on single locations)
+  max-search-time-per-attempt: 50
+
+# Safety settings for teleportation
+safety:
+  # How strict the safety checks should be (1-5, 1=very strict, 5=very lenient)
+  strictness: 3
+  # Maximum number of attempts to find a safe location
+  max-attempts: 50
+  # Blocks that are considered safe to teleport to
+  safe-blocks:
+    - GRASS_BLOCK
+    - STONE
+    - DIRT
+    - SAND
+    - GRAVEL
+    - SNOW
+    - CLAY
+    - PODZOL
+    - MYCELIUM
+    - COARSE_DIRT
+    - OAK_LEAVES
+    - BIRCH_LEAVES
+    - SPRUCE_LEAVES
+    - JUNGLE_LEAVES
+    - ACACIA_LEAVES
+    - DARK_OAK_LEAVES
+    - AZALEA_LEAVES
+    - FLOWERING_AZALEA_LEAVES
+    - MANGROVE_LEAVES
+    - CHERRY_LEAVES
+
+# Unsafe block types (blocks that are considered unsafe to teleport to)
+unsafe-blocks:
+  - "WATER"
+  - "LAVA"
+  - "CACTUS"
+  - "FIRE"
+  - "VOID_AIR"
+  - "CAVE_AIR"
+  - "POWDER_SNOW"

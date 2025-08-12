@@ -1,0 +1,31 @@
+# MightyRTP Messages Configuration
+# Note: Title enabling/disabling is controlled in config.yml under 'titles.enabled'
+
+# Title message (shown when executing /rtp)
+title:
+  text: "<green>Teleporting please wait...</green>"
+  # Note: Color and formatting are now handled in the text field using tags
+  # Available tags: <color>, <bold>, <italic>, <underlined>, <strikethrough>, <reset>
+  # Available colors: black, dark_blue, dark_green, dark_aqua, dark_red, dark_purple, gold, gray, dark_gray, blue, green, aqua, red, light_purple, yellow, white
+
+# Subtitle message (shown below the title)
+subtitle:
+  text: "<aqua><italic>Good luck out there!</italic></aqua>"
+  # Note: Color and formatting are now handled in the text field using tags
+
+# Chat messages
+messages:
+  teleporting: "<green>Finding a safe location...</green>"
+  teleported: "<green>You have been teleported to a random location!</green>"
+  no-safe-location: "<red>Could not find a safe location. Please try again!</red>"
+  world-blacklisted: "<red>Random teleport is disabled in this world!</red>"
+  reload-success: "<green>Configuration reloaded successfully!</green>"
+  reload-failed: "<red>Failed to reload configuration!</red>"
+  no-permission: "<red>You don't have permission to use this command!</red>"
+  cooldown-exceeded: "<red>You have exceeded the cooldown limit! You can use this command again in</red> <yellow>{time}.</yellow>"
+  cooldown-remaining: "<red>You can use this command {remaining} more times within the next {time} minutes.</red>"
+  bypass-active: "<gold>Bypass permission active - unlimited teleports!</gold>"
+  player-not-found: "<red>Player not found: {player}</red>"
+  teleporting-other: "<green>Teleporting {player} to a random location...</green>"
+  teleported-other: "<green>Successfully teleported {player} to a random location!</green>"
+  no-safe-location-other: "<red>Could not find a safe location for {player}</red>"

@@ -1,0 +1,32 @@
+name: MightyRTP
+version: 1.0.0
+main: com.example.mightyrtp.MightyRTP
+api-version: '1.17'
+authors: [MightyFinger77]
+description: A powerful random teleporter plugin for Minecraft servers
+
+commands:
+  rtp:
+    description: Teleport to a random safe location
+    usage: /rtp [player]
+    permission: mightyrtp.rtp
+    permission-message: You don't have permission to use this command!
+  rtp-reload:
+    description: Reload the plugin configuration
+    usage: /rtp-reload
+    permission: mightyrtp.reload
+    permission-message: You don't have permission to use this command!
+
+permissions:
+  mightyrtp.rtp:
+    description: Allows players to use /rtp command
+    default: true
+  mightyrtp.rtp.other:
+    description: Allows players to use /rtp command on other players
+    default: op
+  mightyrtp.bypass:
+    description: Allows players to bypass the cooldown limit
+    default: op
+  mightyrtp.reload:
+    description: Allows players to reload the plugin configuration
+    default: op
