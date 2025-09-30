@@ -1,6 +1,7 @@
 # MightyRTP Configuration
 
 # Worlds where the /rtp command is disabled
+# Case-sensitive
 blacklisted-worlds:
   - "world_nether"
   - "world_the_end"
@@ -26,6 +27,8 @@ cooldown:
 titles:
   # Enable/disable title messages when teleporting
   enabled: true
+  # Enable/disable title messages for console RTP commands (recommended: false for clean portal experience)
+  show-for-console: false
 
 # Debug settings
 debug:
@@ -41,6 +44,12 @@ performance:
   async-teleport-search: true
   # Maximum search time per attempt in milliseconds (prevents hanging on single locations)
   max-search-time-per-attempt: 50
+  # Fast mode for console commands - skips chunk loading for maximum speed (recommended: true)
+  fast-mode-enabled: true
+  # Maximum attempts in fast mode (lower = faster, but less thorough)
+  fast-mode-max-attempts: 5
+  # Fast mode safety level (1=basic unsafe blocks check, 2=+air above, 3=full safety)
+  fast-mode-safety-level: 2
 
 # Safety settings for teleportation
 safety:
@@ -48,28 +57,7 @@ safety:
   strictness: 3
   # Maximum number of attempts to find a safe location
   max-attempts: 50
-  # Blocks that are considered safe to teleport to
-  safe-blocks:
-    - GRASS_BLOCK
-    - STONE
-    - DIRT
-    - SAND
-    - GRAVEL
-    - SNOW
-    - CLAY
-    - PODZOL
-    - MYCELIUM
-    - COARSE_DIRT
-    - OAK_LEAVES
-    - BIRCH_LEAVES
-    - SPRUCE_LEAVES
-    - JUNGLE_LEAVES
-    - ACACIA_LEAVES
-    - DARK_OAK_LEAVES
-    - AZALEA_LEAVES
-    - FLOWERING_AZALEA_LEAVES
-    - MANGROVE_LEAVES
-    - CHERRY_LEAVES
+
 
 # Unsafe block types (blocks that are considered unsafe to teleport to)
 unsafe-blocks:
@@ -80,3 +68,5 @@ unsafe-blocks:
   - "VOID_AIR"
   - "CAVE_AIR"
   - "POWDER_SNOW"
+  - "MAGMA_BLOCK"
+  - "SWEET_BERRY_BUSH"

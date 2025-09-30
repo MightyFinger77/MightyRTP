@@ -38,20 +38,7 @@ public class ConfigManager {
         return config.getInt("min-distance-from-spawn", 500);
     }
     
-    public List<Material> getSafeBlocks() {
-        List<String> safeBlockNames = config.getStringList("safe-blocks");
-        return safeBlockNames.stream()
-                .map(name -> {
-                    try {
-                        return Material.valueOf(name);
-                    } catch (IllegalArgumentException e) {
-                        plugin.getLogger().warning("Invalid material name in config: " + name);
-                        return null;
-                    }
-                })
-                .filter(material -> material != null)
-                .collect(Collectors.toList());
-    }
+
     
     public List<Material> getUnsafeBlocks() {
         List<String> unsafeBlockNames = config.getStringList("unsafe-blocks");
@@ -88,6 +75,14 @@ public class ConfigManager {
         return config.getBoolean("titles.enabled", true);
     }
     
+    /**
+     * Check if titles should be shown for console RTP commands
+     * @return true if console commands should show titles
+     */
+    public boolean shouldShowTitlesForConsole() {
+        return config.getBoolean("titles.show-for-console", false);
+    }
+    
     public boolean isDebugEnabled() {
         return config.getBoolean("debug.enabled", false);
     }
@@ -102,6 +97,30 @@ public class ConfigManager {
     
     public int getMaxSearchTimePerAttempt() {
         return config.getInt("performance.max-search-time-per-attempt", 50);
+    }
+    
+    /**
+     * Check if fast mode is enabled for console commands
+     * @return true if fast mode is enabled
+     */
+    public boolean isFastModeEnabled() {
+        return config.getBoolean("performance.fast-mode-enabled", true);
+    }
+    
+    /**
+     * Get the maximum attempts in fast mode
+     * @return The maximum attempts in fast mode
+     */
+    public int getFastModeMaxAttempts() {
+        return config.getInt("performance.fast-mode-max-attempts", 5);
+    }
+    
+    /**
+     * Get the fast mode safety level
+     * @return The fast mode safety level (1=basic, 2=standard, 3=full)
+     */
+    public int getFastModeSafetyLevel() {
+        return config.getInt("performance.fast-mode-safety-level", 2);
     }
     
     /**

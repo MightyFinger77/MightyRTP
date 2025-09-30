@@ -68,8 +68,15 @@ public class TeleportUtils {
         int centerX = 0;
         int centerZ = 0;
 
-        // Single aggressive search strategy - try to load chunks as needed
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+        // Fast mode: extremely aggressive for console commands
+        int finalMaxAttempts = maxAttempts;
+        
+        if (configManager.isFastModeEnabled()) {
+            finalMaxAttempts = Math.min(finalMaxAttempts, configManager.getFastModeMaxAttempts());
+        }
+
+        // Fast strategy: try to find ANY valid location with minimal checks
+        for (int attempt = 1; attempt <= finalMaxAttempts; attempt++) {
             // Generate random coordinates within the teleport distance
             double angle = Math.random() * 2 * Math.PI;
             double distance = Math.random() * teleportDistance;
@@ -80,63 +87,51 @@ public class TeleportUtils {
             // Check minimum distance from spawn
             double distanceFromSpawn = Math.sqrt(x * x + z * z);
             if (distanceFromSpawn < minDistanceFromSpawn) {
-                if (debugEnabled && attempt % debugLogInterval == 0) {
-                    plugin.getLogger().info("[MightyRTP] Attempt " + attempt + ": Location at x=" + x + ", z=" + z + " is too close to spawn, skipping...");
+                continue;
+            }
+
+            // Fast mode: skip chunk loading entirely, just try to find a location
+            if (configManager.isFastModeEnabled()) {
+                // Try to find the highest block without loading chunks
+                int highestY = findHighestSolidBlockFast(world, x, z);
+                if (highestY != -1) {
+                    // Fast mode: minimal safety checks
+                    if (isLocationSafeFast(world, x, highestY, z)) {
+                        if (debugEnabled) {
+                            plugin.getLogger().info("[MightyRTP] Found fast location at x=" + x + ", z=" + z + ", y=" + highestY + " after " + attempt + " attempts");
+                        }
+                        int adjustedY = highestY + 1;
+                        Location location = new Location(world, x, adjustedY, z);
+                        return TeleportResult.success(location);
+                    }
                 }
                 continue;
             }
 
-            // Check if the chunk is loaded, if not, try to load it asynchronously
+            // Normal mode: full chunk loading and safety checks
             if (!world.isChunkLoaded(x >> 4, z >> 4)) {
-                if (debugEnabled && attempt % debugLogInterval == 0) {
-                    plugin.getLogger().info("[MightyRTP] Attempt " + attempt + ": Chunk not loaded at x=" + x + ", z=" + z + ", attempting to load...");
-                }
-                
-                // Use getChunkAtAsync instead of loadChunk to avoid AsyncCatcher errors
                 try {
                     CompletableFuture<org.bukkit.Chunk> chunkFuture = world.getChunkAtAsync(x >> 4, z >> 4, true);
+                    org.bukkit.Chunk chunk = chunkFuture.get(1, TimeUnit.SECONDS);
                     
-                    // Wait for the chunk to load with a timeout
-                    org.bukkit.Chunk chunk = chunkFuture.get(3, TimeUnit.SECONDS);
-                    
-                    // Verify the chunk was actually loaded successfully
                     if (chunk == null || !chunk.isLoaded()) {
-                        if (debugEnabled && attempt % debugLogInterval == 0) {
-                            plugin.getLogger().info("[MightyRTP] Attempt " + attempt + ": Chunk load returned null or failed to load at x=" + x + ", z=" + z);
-                        }
                         continue;
                     }
-                    
-                    if (debugEnabled && attempt % debugLogInterval == 0) {
-                        plugin.getLogger().info("[MightyRTP] Attempt " + attempt + ": Successfully loaded chunk at x=" + x + ", z=" + z);
-                    }
                 } catch (Exception e) {
-                    if (debugEnabled && attempt % debugLogInterval == 0) {
-                        plugin.getLogger().info("[MightyRTP] Attempt " + attempt + ": Failed to load chunk at x=" + x + ", z=" + z + ": " + e.getMessage());
-                    }
                     continue;
                 }
             }
 
-            // Find the highest solid block at this X,Z coordinate using smart scanning
+            // Find the highest solid block at this X,Z coordinate
             int highestY = findHighestSolidBlockSmart(world, x, z);
             if (highestY == -1) {
-                if (debugEnabled && attempt % debugLogInterval == 0) {
-                    plugin.getLogger().info("[MightyRTP] Attempt " + attempt + ": No solid block found at x=" + x + ", z=" + z + ", skipping...");
-                }
                 continue;
             }
 
-            // Check if the location at the highest solid block is safe
-            if (debugEnabled && attempt % debugLogInterval == 0) {
-                plugin.getLogger().info("[MightyRTP] Attempt " + attempt + ": Checking location at x=" + x + ", z=" + z + ", y=" + highestY + "...");
-            }
-
-            if (isLocationSafe(world, x, highestY, z, configManager.getSafeBlocks(), configManager.getUnsafeBlocks())) {
+            if (isLocationSafe(world, x, highestY, z, configManager.getUnsafeBlocks())) {
                 if (debugEnabled) {
                     plugin.getLogger().info("[MightyRTP] Found safe location at x=" + x + ", z=" + z + ", y=" + highestY + " after " + attempt + " attempts");
                 }
-                // Adjust Y position to place player on top of the block, not inside it
                 int adjustedY = highestY + 1;
                 Location location = new Location(world, x, adjustedY, z);
                 return TeleportResult.success(location);
@@ -144,61 +139,37 @@ public class TeleportUtils {
         }
 
         if (debugEnabled) {
-            plugin.getLogger().info("[MightyRTP] Failed to find a safe location after " + maxAttempts + " attempts in world: " + world.getName());
+            plugin.getLogger().info("[MightyRTP] Failed to find a safe location after " + finalMaxAttempts + " attempts in world: " + world.getName());
         }
         
-        // Final aggressive fallback: try to load chunks in a smaller radius
-        if (debugEnabled) {
-            plugin.getLogger().info("[MightyRTP] Trying aggressive fallback - loading chunks in smaller radius...");
-        }
-        
-        for (int attempt = 1; attempt <= 30; attempt++) {
-            // Generate random coordinates within a much smaller radius
-            double angle = Math.random() * 2 * Math.PI;
-            double distance = Math.random() * 1000; // Much smaller radius
-            
-            int x = centerX + (int) (Math.cos(angle) * distance);
-            int z = centerZ + (int) (Math.sin(angle) * distance);
+        // Fast fallback: try spawn area with minimal checks
+        if (configManager.isFastModeEnabled()) {
+            for (int attempt = 1; attempt <= 3; attempt++) {
+                // Try closer to spawn for fast mode
+                double angle = Math.random() * 2 * Math.PI;
+                double distance = Math.random() * 1000; // Much smaller radius
+                
+                int x = centerX + (int) (Math.cos(angle) * distance);
+                int z = centerZ + (int) (Math.sin(angle) * distance);
 
-            // Check minimum distance from spawn
-            double distanceFromSpawn = Math.sqrt(x * x + z * z);
-            if (distanceFromSpawn < minDistanceFromSpawn) {
-                continue;
-            }
-
-            // Try to load the chunk if it's not loaded using async method
-            if (!world.isChunkLoaded(x >> 4, z >> 4)) {
-                try {
-                    CompletableFuture<org.bukkit.Chunk> chunkFuture = world.getChunkAtAsync(x >> 4, z >> 4, true);
-                    org.bukkit.Chunk chunk = chunkFuture.get(2, TimeUnit.SECONDS); // Shorter timeout for fallback
-                    
-                    // Verify the chunk was actually loaded successfully
-                    if (chunk == null || !chunk.isLoaded()) {
-                        continue;
-                    }
-                } catch (Exception e) {
+                double distanceFromSpawn = Math.sqrt(x * x + z * z);
+                if (distanceFromSpawn < minDistanceFromSpawn) {
                     continue;
                 }
-            }
 
-            // Find the highest solid block at this X,Z coordinate using smart scanning
-            int highestY = findHighestSolidBlockSmart(world, x, z);
-            if (highestY == -1) {
-                continue;
-            }
-
-            if (isLocationSafe(world, x, highestY, z, configManager.getSafeBlocks(), configManager.getUnsafeBlocks())) {
-                if (debugEnabled) {
-                    plugin.getLogger().info("[MightyRTP] Found safe location in aggressive fallback at x=" + x + ", z=" + z + ", y=" + highestY);
+                int highestY = findHighestSolidBlockFast(world, x, z);
+                if (highestY != -1 && isLocationSafeFast(world, x, highestY, z)) {
+                    if (debugEnabled) {
+                        plugin.getLogger().info("[MightyRTP] Found fast fallback location at x=" + x + ", z=" + z + ", y=" + highestY);
+                    }
+                    int adjustedY = highestY + 1;
+                    Location location = new Location(world, x, adjustedY, z);
+                    return TeleportResult.success(location);
                 }
-                // Adjust Y position to place player on top of the block, not inside it
-                int adjustedY = highestY + 1;
-                Location location = new Location(world, x, adjustedY, z);
-                return TeleportResult.success(location);
             }
         }
         
-        return TeleportResult.failure("Could not find a safe location after " + maxAttempts + " attempts");
+        return TeleportResult.failure("Could not find a safe location after " + finalMaxAttempts + " attempts");
     }
     
     /**
@@ -210,19 +181,33 @@ public class TeleportUtils {
         return findSafeLocationSync(world, center);
     }
     
-    private boolean isLocationSafe(World world, int x, int y, int z, List<Material> safeBlocks, List<Material> unsafeBlocks) {
+    private boolean isLocationSafe(World world, int x, int y, int z, List<Material> unsafeBlocks) {
         try {
+            boolean isNether = world.getEnvironment() == World.Environment.NETHER;
+            
             // Check the block at the teleport location
             Block block = world.getBlockAt(x, y, z);
             Block blockAbove = world.getBlockAt(x, y + 1, z);
             Block blockBelow = world.getBlockAt(x, y - 1, z);
             
             // Check if the block below is explicitly unsafe (like lava, fire, etc.)
-            if (unsafeBlocks.contains(blockBelow.getType())) {
-                if (configManager.isDebugEnabled()) {
-                    plugin.getLogger().info("Location rejected: Block below is explicitly unsafe - " + blockBelow.getType() + " at y=" + (y-1));
+            // For Nether: be more lenient - only check for immediately dangerous blocks below
+            if (isNether) {
+                // In Nether, only reject if block below is fire or magma block (immediately dangerous)
+                if (blockBelow.getType() == Material.FIRE || blockBelow.getType() == Material.MAGMA_BLOCK) {
+                    if (configManager.isDebugEnabled()) {
+                        plugin.getLogger().info("Location rejected: Block below is immediately dangerous in Nether - " + blockBelow.getType() + " at y=" + (y-1));
+                    }
+                    return false;
                 }
-                return false;
+            } else {
+                // In other dimensions, use the full unsafe blocks check
+                if (unsafeBlocks.contains(blockBelow.getType())) {
+                    if (configManager.isDebugEnabled()) {
+                        plugin.getLogger().info("Location rejected: Block below is explicitly unsafe - " + blockBelow.getType() + " at y=" + (y-1));
+                    }
+                    return false;
+                }
             }
             
             // The teleport location can be a solid block (like grass, leaves, etc.) - players can stand on it
@@ -316,9 +301,17 @@ public class TeleportUtils {
      */
     private int findHighestSolidBlockSmart(World world, int x, int z) {
         try {
-            // Start from a reasonable height (most terrain is below 120) and work down
-            // This is much faster than scanning from max height
-            for (int y = 120; y >= 32; y--) {
+            // Nether-specific location finding - scan from Y=32 to Y=100
+            if (world.getEnvironment() == World.Environment.NETHER) {
+                return findSuitableLocationNether(world, x, z);
+            }
+            
+            // Get dimension-specific height limits for other dimensions
+            int maxHeight = getMaxSearchHeight(world);
+            int minHeight = getMinSearchHeight(world);
+            
+            // Start from a reasonable height and work down
+            for (int y = maxHeight; y >= minHeight; y--) {
                 Block block = world.getBlockAt(x, y, z);
                 if (block.getType() != Material.AIR && block.getType() != Material.CAVE_AIR && block.getType() != Material.VOID_AIR) {
                     return y;
@@ -327,6 +320,218 @@ public class TeleportUtils {
             return -1; // No solid block found
         } catch (Exception e) {
             return -1; // Return -1 on any exception
+        }
+    }
+
+    /**
+     * Find the highest solid block at the given X,Z coordinates using ultra-fast mode
+     * This is a simplified version that skips chunk loading and assumes a high chance of success
+     * Returns -1 if no solid block is found
+     */
+    private int findHighestSolidBlockFast(World world, int x, int z) {
+        try {
+            // Nether-specific location finding - scan from Y=32 to Y=100
+            if (world.getEnvironment() == World.Environment.NETHER) {
+                return findSuitableLocationNether(world, x, z);
+            }
+            
+            // Get dimension-specific height limits for other dimensions
+            int maxHeight = getMaxSearchHeight(world);
+            int minHeight = getMinSearchHeight(world);
+            
+            if (configManager.isDebugEnabled()) {
+                plugin.getLogger().info("[MightyRTP] Searching for solid block at x=" + x + ", z=" + z + " from y=" + maxHeight + " to y=" + minHeight + " in " + world.getEnvironment());
+            }
+            
+            // Start from the max height and work down
+            for (int y = maxHeight; y >= minHeight; y--) {
+                Block block = world.getBlockAt(x, y, z);
+                if (block.getType() != Material.AIR && block.getType() != Material.CAVE_AIR && block.getType() != Material.VOID_AIR) {
+                    if (configManager.isDebugEnabled()) {
+                        plugin.getLogger().info("[MightyRTP] Found solid block " + block.getType() + " at y=" + y);
+                    }
+                    return y;
+                }
+            }
+            
+            if (configManager.isDebugEnabled()) {
+                plugin.getLogger().info("[MightyRTP] No solid block found at x=" + x + ", z=" + z);
+            }
+            return -1; // No solid block found
+        } catch (Exception e) {
+            if (configManager.isDebugEnabled()) {
+                plugin.getLogger().info("[MightyRTP] Exception finding solid block at x=" + x + ", z=" + z + ": " + e.getMessage());
+            }
+            return -1; // Return -1 on any exception
+        }
+    }
+
+    /**
+     * Fast safety check for locations found by findHighestSolidBlockFast
+     * This is a simplified version that still checks for dangerous blocks but skips complex validation
+     * Returns true if the location is safe, false otherwise
+     */
+    private boolean isLocationSafeFast(World world, int x, int y, int z) {
+        try {
+            int safetyLevel = configManager.getFastModeSafetyLevel();
+            boolean isNether = world.getEnvironment() == World.Environment.NETHER;
+            
+            // Fast mode: still check for dangerous blocks but skip complex validation
+            Block block = world.getBlockAt(x, y, z);
+            Block blockAbove = world.getBlockAt(x, y + 1, z);
+            Block blockBelow = world.getBlockAt(x, y - 1, z);
+            
+            // Level 1: Basic unsafe blocks check using config
+            if (safetyLevel >= 1) {
+                List<Material> unsafeBlocks = configManager.getUnsafeBlocks();
+                
+                // Check if the teleport location is in the unsafe blocks list
+                if (unsafeBlocks.contains(block.getType())) {
+                    if (configManager.isDebugEnabled()) {
+                        plugin.getLogger().info("[MightyRTP] Location rejected: Teleport block is unsafe - " + block.getType());
+                    }
+                    return false;
+                }
+                
+                // For Nether: be more lenient - only check block below if it's not lava
+                // In Nether, it's common to have lava below solid blocks, which is safe to stand on
+                if (isNether) {
+                    // In Nether, only reject if block below is fire or other immediately dangerous blocks
+                    if (blockBelow.getType() == Material.FIRE || blockBelow.getType() == Material.MAGMA_BLOCK) {
+                        if (configManager.isDebugEnabled()) {
+                            plugin.getLogger().info("[MightyRTP] Location rejected: Block below is immediately dangerous in Nether - " + blockBelow.getType());
+                        }
+                        return false;
+                    }
+                } else {
+                    // In other dimensions, use the full unsafe blocks check
+                    if (unsafeBlocks.contains(blockBelow.getType())) {
+                        if (configManager.isDebugEnabled()) {
+                            plugin.getLogger().info("[MightyRTP] Location rejected: Block below is unsafe - " + blockBelow.getType());
+                        }
+                        return false;
+                    }
+                }
+            }
+            
+            // Level 2: Standard safety (unsafe blocks + air above)
+            if (safetyLevel >= 2) {
+                // Check if there's enough air above (at least 1 block)
+                if (blockAbove.getType() != Material.AIR) {
+                    if (configManager.isDebugEnabled()) {
+                        plugin.getLogger().info("[MightyRTP] Location rejected: No air above - " + blockAbove.getType());
+                    }
+                    return false;
+                }
+            }
+            
+            // Level 3: Full safety (includes additional checks)
+            if (safetyLevel >= 3) {
+                // Additional safety checks can be added here
+                // For now, we already have the unsafe blocks check from level 1
+            }
+            
+            if (configManager.isDebugEnabled()) {
+                plugin.getLogger().info("[MightyRTP] Location accepted: Safe location found at x=" + x + ", y=" + y + ", z=" + z + " (block=" + block.getType() + ", above=" + blockAbove.getType() + ", below=" + blockBelow.getType() + ")");
+            }
+            
+            return true;
+        } catch (Exception e) {
+            // If any exception occurs during fast safety check, reject this location
+            if (configManager.isDebugEnabled()) {
+                plugin.getLogger().info("Location rejected: Fast safety check failed at x=" + x + ", z=" + z + ": " + e.getMessage());
+            }
+            return false;
+        }
+    }
+    
+    /**
+     * Get the maximum search height for a given world dimension
+     * This prevents scanning above the Nether roof and other dimension limits
+     */
+    private int getMaxSearchHeight(World world) {
+        if (world.getEnvironment() == World.Environment.NETHER) {
+            // In the Nether, don't search above Y=120 to avoid the roof
+            return 120;
+        } else if (world.getEnvironment() == World.Environment.THE_END) {
+            // In the End, search up to a reasonable height
+            return 100;
+        } else {
+            // Overworld and other dimensions - use a reasonable height
+            return 120;
+        }
+    }
+    
+    /**
+     * Get the minimum search height for a given world dimension
+     */
+    private int getMinSearchHeight(World world) {
+        if (world.getEnvironment() == World.Environment.NETHER) {
+            // In the Nether, start from Y=8 (above bedrock floor, more Nether terrain is lower)
+            return 8;
+        } else if (world.getEnvironment() == World.Environment.THE_END) {
+            // In the End, start from Y=0
+            return 0;
+        } else {
+            // Overworld and other dimensions - start from Y=32
+            return 32;
+        }
+    }
+    
+    /**
+     * Nether-specific location finding algorithm
+     * Scans from Y=32 to Y=100 to find suitable locations, avoiding the roof
+     * Returns the Y coordinate of a suitable location, or -1 if none found
+     */
+    private int findSuitableLocationNether(World world, int x, int z) {
+        if (configManager.isDebugEnabled()) {
+            plugin.getLogger().info("[MightyRTP] Searching for suitable Nether location at x=" + x + ", z=" + z + " from y=32 to y=100");
+        }
+        
+        // Scan from Y=32 to Y=100 (avoiding the roof at Y=127)
+        for (int y = 32; y <= 100; y++) {
+            if (isSuitableLocationNether(world, x, y, z)) {
+                if (configManager.isDebugEnabled()) {
+                    plugin.getLogger().info("[MightyRTP] Found suitable Nether location at x=" + x + ", y=" + y + ", z=" + z);
+                }
+                return y;
+            }
+        }
+        
+        if (configManager.isDebugEnabled()) {
+            plugin.getLogger().info("[MightyRTP] No suitable Nether location found at x=" + x + ", z=" + z);
+        }
+        return -1;
+    }
+    
+    /**
+     * Check if a location in the Nether is suitable for teleportation
+     * Requirements:
+     * - Standing block is solid and not magma block
+     * - Two blocks of air above for player space
+     */
+    private boolean isSuitableLocationNether(World world, int x, int y, int z) {
+        try {
+            Block standingBlock = world.getBlockAt(x, y, z);
+            Block aboveBlock = world.getBlockAt(x, y + 1, z);
+            Block twoAboveBlock = world.getBlockAt(x, y + 2, z);
+            
+            // Check if standing block is solid and not magma block
+            if (!standingBlock.getType().isSolid() || standingBlock.getType() == Material.MAGMA_BLOCK) {
+                return false;
+            }
+            
+            // Check if there are two blocks of air above
+            if (aboveBlock.getType() != Material.AIR || twoAboveBlock.getType() != Material.AIR) {
+                return false;
+            }
+            
+            return true;
+        } catch (Exception e) {
+            if (configManager.isDebugEnabled()) {
+                plugin.getLogger().info("[MightyRTP] Exception checking Nether location suitability at x=" + x + ", y=" + y + ", z=" + z + ": " + e.getMessage());
+            }
+            return false;
         }
     }
 }

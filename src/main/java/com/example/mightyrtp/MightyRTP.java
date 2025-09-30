@@ -33,12 +33,12 @@ public class MightyRTP extends JavaPlugin {
         getCommand("rtp").setTabCompleter(new RTPTabCompleter());
         getCommand("rtp-reload").setExecutor(new ReloadCommand(this));
         
-        getLogger().info("MightyRTP has been enabled!");
+        getLogger().info("MightyRTP 1.0.4 has been enabled!");
     }
     
     @Override
     public void onDisable() {
-        getLogger().info("MightyRTP has been disabled!");
+        getLogger().info("MightyRTP 1.0.4 has been disabled!");
     }
     
     public static MightyRTP getInstance() {

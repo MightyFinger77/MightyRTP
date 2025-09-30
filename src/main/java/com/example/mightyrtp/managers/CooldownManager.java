@@ -34,8 +34,9 @@ public class CooldownManager {
         long currentTime = System.currentTimeMillis();
         
         if (cooldown == null) {
-            // First time using the command - start a new cooldown
+            // First time using the command - start a new cooldown and count this use
             cooldown = new PlayerCooldown(currentTime);
+            cooldown.addUse(currentTime);
             playerCooldowns.put(playerId, cooldown);
             return true;
         }
@@ -44,13 +45,15 @@ public class CooldownManager {
         long cooldownEndTime = cooldown.getStartTime() + (plugin.getConfigManager().getCooldownTimeWindow() * 60 * 1000);
         
         if (currentTime >= cooldownEndTime) {
-            // Cooldown window expired, start a new one
+            // Cooldown window expired, start a new one and count this use
             cooldown = new PlayerCooldown(currentTime);
+            cooldown.addUse(currentTime);
             playerCooldowns.put(playerId, cooldown);
             return true;
         }
         
         // Check if player can use the command within the current window
+        // We need to check if adding this use would exceed the limit
         if (cooldown.getUseCount() >= plugin.getConfigManager().getCooldownMaxUses()) {
             return false;
         }

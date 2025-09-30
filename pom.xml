@@ -6,11 +6,11 @@
 
     <groupId>com.example</groupId>
     <artifactId>MightyRTP</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.4</version>
     <packaging>jar</packaging>
 
     <name>MightyRTP</name>
-    <description>A powerful random teleporter plugin for Minecraft servers</description>
+    <description>A powerful random teleporter plugin for Minecraft servers with console command support</description>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
