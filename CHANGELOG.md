@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.5] - TBD
+
+### Added
+- **Update Checker System** - Automatic update checking on startup with manual check via `/rtp-update` command
+- **Config Migration System** - Automatic config migration preserves user settings while adding new options
+- **RTP Center Management** - New `/rtp-center` command to set custom center points per world (defaults to 0,0)
+- **Custom Teleport Spots** - New `/rtp-set` command to add pre-set teleport locations (set `teleport-distance: CUSTOM` in config)
+- New permission `mightyrtp.admin` for admin commands (default: op)
+- New permission `mightyrtp.update` for update checking (default: op)
+- New config files: `centers.yml` and `spots.yml` for managing RTP centers and custom spots
+
 ## [1.0.4] - 2025-09-24
 
 ### Fixed

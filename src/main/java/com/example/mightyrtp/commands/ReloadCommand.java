@@ -3,6 +3,8 @@ package com.example.mightyrtp.commands;
 import com.example.mightyrtp.MightyRTP;
 import com.example.mightyrtp.managers.ConfigManager;
 import com.example.mightyrtp.managers.MessageManager;
+import com.example.mightyrtp.managers.CentersManager;
+import com.example.mightyrtp.managers.SpotsManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -33,9 +35,11 @@ public class ReloadCommand implements CommandExecutor {
         }
         
         try {
-            // Reload configurations
+            // Reload all configuration files
             configManager.reloadConfig();
             messageManager.reloadMessages();
+            plugin.getCentersManager().reloadCenters();
+            plugin.getSpotsManager().reloadSpots();
             
             // Send success message
             if (sender instanceof Player) {

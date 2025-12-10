@@ -1,0 +1,11 @@
+# MightyRTP Centers Configuration
+# This file stores the center coordinates for RTP calculations per world
+# Default center is 0, 0 for all worlds
+# Use /rtp-center command to set the center for a world
+
+centers:
+  # Example world configuration:
+  # world:
+  #   x: 0
+  #   z: 0
+

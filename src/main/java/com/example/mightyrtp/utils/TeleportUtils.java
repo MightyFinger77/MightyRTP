@@ -2,6 +2,8 @@ package com.example.mightyrtp.utils;
 
 import com.example.mightyrtp.MightyRTP;
 import com.example.mightyrtp.managers.ConfigManager;
+import com.example.mightyrtp.managers.CentersManager;
+import com.example.mightyrtp.managers.SpotsManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -19,11 +21,15 @@ public class TeleportUtils {
     
     private final MightyRTP plugin;
     private final ConfigManager configManager;
+    private final CentersManager centersManager;
+    private final SpotsManager spotsManager;
     private final Random random;
     
     public TeleportUtils(MightyRTP plugin) {
         this.plugin = plugin;
         this.configManager = plugin.getConfigManager();
+        this.centersManager = plugin.getCentersManager();
+        this.spotsManager = plugin.getSpotsManager();
         this.random = new Random();
     }
     
@@ -58,15 +64,29 @@ public class TeleportUtils {
             return TeleportResult.failure("World is null");
         }
 
+        // Check if custom teleport mode is enabled
+        if (configManager.isCustomTeleportMode()) {
+            Location customSpot = spotsManager.getRandomSpot(world);
+            if (customSpot != null) {
+                if (configManager.isDebugEnabled()) {
+                    plugin.getLogger().info("[MightyRTP] Using custom teleport spot at " + customSpot.getBlockX() + ", " + customSpot.getBlockY() + ", " + customSpot.getBlockZ());
+                }
+                return TeleportResult.success(customSpot);
+            } else {
+                // No custom spots available, return failure
+                return TeleportResult.failure("No custom teleport spots available for world: " + world.getName() + ". Use /rtp-set to add spots.");
+            }
+        }
+
         int maxAttempts = configManager.getMaxAttempts();
         int teleportDistance = configManager.getTeleportDistance();
         int minDistanceFromSpawn = configManager.getMinDistanceFromSpawn();
         boolean debugEnabled = configManager.isDebugEnabled();
         int debugLogInterval = configManager.getDebugLogAttemptInterval();
 
-        // Use (0,0) as the center reference point
-        int centerX = 0;
-        int centerZ = 0;
+        // Get center from CentersManager (defaults to 0,0 if not set)
+        int centerX = centersManager.getCenterX(world);
+        int centerZ = centersManager.getCenterZ(world);
 
         // Fast mode: extremely aggressive for console commands
         int finalMaxAttempts = maxAttempts;
@@ -84,9 +104,9 @@ public class TeleportUtils {
             int x = centerX + (int) (Math.cos(angle) * distance);
             int z = centerZ + (int) (Math.sin(angle) * distance);
 
-            // Check minimum distance from spawn
-            double distanceFromSpawn = Math.sqrt(x * x + z * z);
-            if (distanceFromSpawn < minDistanceFromSpawn) {
+            // Check minimum distance from center
+            double distanceFromCenter = Math.sqrt((x - centerX) * (x - centerX) + (z - centerZ) * (z - centerZ));
+            if (distanceFromCenter < minDistanceFromSpawn) {
                 continue;
             }
 
@@ -152,8 +172,8 @@ public class TeleportUtils {
                 int x = centerX + (int) (Math.cos(angle) * distance);
                 int z = centerZ + (int) (Math.sin(angle) * distance);
 
-                double distanceFromSpawn = Math.sqrt(x * x + z * z);
-                if (distanceFromSpawn < minDistanceFromSpawn) {
+                double distanceFromCenter = Math.sqrt((x - centerX) * (x - centerX) + (z - centerZ) * (z - centerZ));
+                if (distanceFromCenter < minDistanceFromSpawn) {
                     continue;
                 }
 

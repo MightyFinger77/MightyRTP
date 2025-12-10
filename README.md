@@ -1,4 +1,4 @@
-# MightyRTP v1.0.4
+# MightyRTP v1.0.5
 
 > **WARNING**: Be careful using this plugin in problematic worlds like CaveBlock or cave-generated worlds, as they can cause server crashes. It is **strongly recommended** to blacklist these worlds in the configuration.
 
@@ -15,6 +15,14 @@
 - **User Experience**: Smart tab completion and intuitive command structure
 - **Stable Performance**: No more server crashes from chunk loading operations
 
+- **Update Checker**: Automatic update notifications with manual check command
+
+- **Config Migration**: Automatic config migration preserves your settings when updating
+
+- **Custom RTP Centers**: Set custom center points per world for RTP radius calculations
+
+- **Custom Teleport Spots**: Pre-set teleport locations for controlled RTP destinations
+
 ## Quick Start
 
 ### Installation
@@ -28,6 +36,9 @@
 - `/rtp [player]` - Teleport another player (requires permission)
 - `/rtp [player] [world]` - Teleport another player to specified world (requires permission)
 - `/rtp-reload` - Reload plugin configuration (requires permission)
+- `/rtp-update` - Check for plugin updates (requires permission)
+- `/rtp-center` - Set RTP center point for current world (requires permission)
+- `/rtp-set` - Add custom teleport spot at your location (requires permission, only works when `teleport-distance: CUSTOM`)
 
 ## Commands
 
@@ -51,6 +62,21 @@
 - Permission: `mightyrtp.reload`
 - Usage: `/rtp-reload`
 
+**`/rtp-update`**
+- Description: Check for plugin updates
+- Permission: `mightyrtp.update`
+- Usage: `/rtp-update`
+
+**`/rtp-center`**
+- Description: Set the RTP center point for the current world (defaults to 0,0)
+- Permission: `mightyrtp.admin`
+- Usage: `/rtp-center` (stand where you want the center to be)
+
+**`/rtp-set`**
+- Description: Add a custom teleport spot at your current location (only works when `teleport-distance: CUSTOM` in config)
+- Permission: `mightyrtp.admin`
+- Usage: `/rtp-set` (stand where you want the teleport spot to be)
+
 ## Permissions
 
 **`mightyrtp.rtp`**
@@ -73,6 +99,14 @@
 - Description: Allows players to reload the plugin configuration
 - Default: `op`
 
+**`mightyrtp.update`**
+- Description: Allows players to check for plugin updates
+- Default: `op`
+
+**`mightyrtp.admin`**
+- Description: Allows players to set RTP center points and custom teleport spots
+- Default: `op`
+
 ### Config (config.yml)
 ```yaml
 # Worlds where the /rtp command is disabled
@@ -84,6 +118,7 @@ blacklisted-worlds:
 # Random teleporter distance (border limit)
 # This keeps players within ±distance blocks from world center (0,0)
 # Set to -1 to disable border limit
+# Set to "CUSTOM" to use pre-set teleport spots (use /rtp-set to add spots, must set spots for each enabled world)
 teleport-distance: 5000
 
 # Minimum distance from world center (0,0) (prevents teleporting too close to center)
@@ -198,6 +233,29 @@ The plugin uses intelligent terrain scanning instead of arbitrary Y-level checki
 - **Surface Placement**: Players are teleported to Y+1 (on top of blocks)
 - **No Embedding**: Prevents players from being placed inside blocks
 - **Collision Safe**: Ensures proper player positioning for all teleportations
+
+## Advanced Features
+
+### Custom RTP Centers
+
+Set custom center points for RTP radius calculations per world:
+
+1. Stand at the desired center location
+2. Run `/rtp-center`
+3. All RTP teleports in that world will use this location as the center point
+4. Centers are stored in `centers.yml` and persist across restarts
+
+### Custom Teleport Spots
+
+Use pre-set teleport locations instead of random generation:
+
+1. Set `teleport-distance: CUSTOM` in `config.yml`
+2. Stand at desired teleport locations and run `/rtp-set` for each spot
+3. Players using `/rtp` will be teleported to random spots from your list
+4. Spots are stored in `spots.yml` per world
+5. Switch back to normal mode by setting `teleport-distance` to a number (e.g., `5000`) and reloading
+
+**Note**: You must set spots for each world separately. Remember to reload config after changing modes.
 
 ## Troubleshooting
 

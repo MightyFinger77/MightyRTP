@@ -1,0 +1,15 @@
+# MightyRTP Custom Spots Configuration
+# This file stores custom teleport spots for each world
+# Only used when teleport-distance is set to "CUSTOM" in config.yml
+# Use /rtp-set command to add spots while standing at the desired location
+
+spots:
+  # Example world configuration:
+  # world:
+  #   - x: 100
+  #     y: 64
+  #     z: 200
+  #   - x: -500
+  #     y: 70
+  #     z: 300
+

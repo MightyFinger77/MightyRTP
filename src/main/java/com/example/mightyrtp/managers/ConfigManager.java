@@ -12,6 +12,10 @@ public class ConfigManager {
     private final MightyRTP plugin;
     private FileConfiguration config;
     
+    public FileConfiguration getConfig() {
+        return config;
+    }
+    
     public ConfigManager(MightyRTP plugin) {
         this.plugin = plugin;
     }
@@ -19,6 +23,8 @@ public class ConfigManager {
     public void loadConfig() {
         plugin.saveDefaultConfig();
         config = plugin.getConfig();
+        // Migrate config if needed
+        plugin.migrateConfig();
     }
     
     public void reloadConfig() {
@@ -32,6 +38,15 @@ public class ConfigManager {
     
     public int getTeleportDistance() {
         return config.getInt("teleport-distance", 5000);
+    }
+    
+    /**
+     * Check if teleport distance is set to CUSTOM mode
+     * @return true if teleport-distance is "CUSTOM" (case-insensitive)
+     */
+    public boolean isCustomTeleportMode() {
+        String value = config.getString("teleport-distance", "5000");
+        return "CUSTOM".equalsIgnoreCase(value);
     }
     
     public int getMinDistanceFromSpawn() {
@@ -137,6 +152,17 @@ public class ConfigManager {
      */
     public int getMaxAttempts() {
         return config.getInt("safety.max-attempts", 50);
+    }
+    
+    /**
+     * Check if update checking is enabled
+     * @return true if update checking is enabled
+     */
+    public boolean isUpdateCheckEnabled() {
+        if (config == null) {
+            return true; // Default to enabled if config not loaded
+        }
+        return config.getBoolean("general.check-updates", true);
     }
     
 

@@ -1,5 +1,5 @@
 name: MightyRTP
-version: 1.0.4
+version: 1.0.5
 main: com.example.mightyrtp.MightyRTP
 api-version: '1.17'
 authors: [MightyFinger77]
@@ -15,6 +15,21 @@ commands:
     description: Reload the plugin configuration
     usage: /rtp-reload
     permission: mightyrtp.reload
+    permission-message: You don't have permission to use this command!
+  rtp-update:
+    description: Check for plugin updates
+    usage: /rtp-update
+    permission: mightyrtp.update
+    permission-message: You don't have permission to use this command!
+  rtp-center:
+    description: Set the RTP center point for the current world
+    usage: /rtp-center
+    permission: mightyrtp.admin
+    permission-message: You don't have permission to use this command!
+  rtp-set:
+    description: Add a custom teleport spot at your current location
+    usage: /rtp-set
+    permission: mightyrtp.admin
     permission-message: You don't have permission to use this command!
 
 permissions:
@@ -32,4 +47,10 @@ permissions:
     default: op
   mightyrtp.reload:
     description: Allows players to reload the plugin configuration
+    default: op
+  mightyrtp.update:
+    description: Allows players to check for plugin updates
+    default: op
+  mightyrtp.admin:
+    description: Allows players to set RTP center points
     default: op

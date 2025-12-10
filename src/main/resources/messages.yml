@@ -1,4 +1,6 @@
 # MightyRTP Messages Configuration
+# Messages version - do not modify
+messages_version: 1
 # Note: Title enabling/disabling is controlled in config.yml under 'titles.enabled'
 
 # Title message (shown when executing /rtp)
