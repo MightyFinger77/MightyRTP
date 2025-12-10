@@ -109,6 +109,15 @@
 
 ### Config (config.yml)
 ```yaml
+# MightyRTP Configuration
+# Config version - do not modify
+config_version: 1
+
+# General settings
+general:
+  # Check for updates on startup
+  check-updates: true
+
 # Worlds where the /rtp command is disabled
 # Case-sensitive
 blacklisted-worlds:
@@ -121,7 +130,7 @@ blacklisted-worlds:
 # Set to "CUSTOM" to use pre-set teleport spots (use /rtp-set to add spots, must set spots for each enabled world)
 teleport-distance: 5000
 
-# Minimum distance from world center (0,0) (prevents teleporting too close to center)
+# Minimum distance from world center (0,0 or preset /rtp-center) (prevents teleporting too close to center)
 min-distance-from-spawn: 200
 
 # Cooldown settings. Users with mightyrtp.bypass ignore this feature.
@@ -180,6 +189,7 @@ unsafe-blocks:
   - "POWDER_SNOW"
   - "MAGMA_BLOCK"
   - "SWEET_BERRY_BUSH"
+
 ```
 ### Messages (messages.yml)
 
